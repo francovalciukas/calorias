@@ -5,7 +5,8 @@ Calculadora de calorías con IA: sacas una foto del plato, Claude estima calorí
 ## Estructura
 
 - `public/index.html` — toda la app (interfaz, animaciones, lógica y almacenamiento local).
-- `netlify/functions/analyze.mjs` — función que llama a Claude. Tu API key vive aquí, nunca en el navegador.
+- `netlify/functions/analyze.mjs` — función que llama a Claude para analizar comidas. Tu API key vive aquí, nunca en el navegador.
+- `netlify/functions/activity.mjs` — función que llama a Claude para estimar calorías quemadas en actividad física y sugerir ejercicios según hora y clima.
 - `netlify.toml`, `package.json` — configuración de Netlify.
 
 ## Publicar en Netlify
@@ -15,7 +16,7 @@ Calculadora de calorías con IA: sacas una foto del plato, Claude estima calorí
 3. **Conecta Netlify**: en https://app.netlify.com → *Add new site → Import an existing project* → elige el repositorio. No cambies nada de la configuración de build y pulsa *Deploy*.
 4. **Configura las variables** en *Site configuration → Environment variables*:
    - `ANTHROPIC_API_KEY` — tu key (obligatoria).
-   - `APP_PIN` — un código que inventes (recomendado). Evita que alguien con el enlace gaste tu crédito. Después lo escribes una vez en la pestaña Perfil de la app.
+   - `APP_PIN` — un código que inventes (recomendado). Evita que alguien con el enlace gaste tu crédito y activa la copia automática de tus datos en la nube. Después lo escribes una vez en Perfil → Tus datos.
 5. **Vuelve a desplegar** (*Deploys → Trigger deploy*) para que tome las variables.
 6. Abre el enlace en el móvil y usa *Compartir → Agregar a inicio* para tenerla como app.
 
@@ -30,5 +31,8 @@ En local no hay función de IA: la app responde con un plato de ejemplo ("modo d
 ## Notas
 
 - Modelo: `claude-opus-5-5` con esfuerzo bajo. Se cambia en `analyze.mjs`.
-- Los datos (perfil y comidas) se guardan solo en el navegador del dispositivo. Borrar los datos del sitio los elimina.
+- Los datos (perfil, comidas y actividad) se guardan en el navegador del móvil y, si configuraste `APP_PIN`, también en Netlify Blobs de tu propio sitio (`netlify/functions/sync.mjs`), con una copia extra por día. Actualizar la app no borra nada.
+- En Perfil → Tus datos puedes además descargar una copia en un archivo y restaurarla.
+- El clima se obtiene de Open-Meteo (gratis, sin API key) con la ubicación del móvil, solo si das permiso. Si no, puedes escribir la temperatura a mano.
+- Las calorías de ejercicio son netas (descontando lo que gastarías en reposo) y por defecto se suma la mitad al objetivo del día; se cambia en Perfil.
 - Objetivo calórico: Mifflin-St Jeor × nivel de actividad − déficit elegido, con un mínimo de 1500 kcal (hombres) o 1200 kcal (mujeres).
