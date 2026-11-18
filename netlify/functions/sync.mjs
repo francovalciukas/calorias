@@ -1,27 +1,17 @@
-import { getStore } from "@netlify/blobs";
+import { getUser, json, store } from "../lib/auth.mjs";
 
 export const config = { path: "/api/sync" };
 
-const json = (status, body) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
-  });
-
-// Copia de seguridad de tus datos en Netlify Blobs (almacenamiento de tu propio sitio).
+// Copia de seguridad de los datos de cada usuario en Netlify Blobs.
 export default async (req) => {
-  const pin = process.env.APP_PIN;
-  if (!pin) {
-    return json(403, { error: "Configura APP_PIN en Netlify para activar la copia en la nube." });
-  }
-  if (req.headers.get("x-app-pin") !== pin) {
-    return json(401, { error: "Código de acceso incorrecto. Revísalo en Perfil." });
-  }
+  const user = await getUser(req);
+  if (!user) return json(401, { error: "Tu sesión expiró. Vuelve a entrar con tu usuario." });
 
-  const store = getStore({ name: "kcal-ia", consistency: "strong" });
+  const s = store();
+  const key = `data/${user}`;
 
   if (req.method === "GET") {
-    const saved = await store.get("backup", { type: "json" });
+    const saved = await s.get(key, { type: "json" });
     return json(200, saved ?? { data: null, updatedAt: 0 });
   }
 
@@ -36,14 +26,14 @@ export default async (req) => {
     if (!body?.data || typeof body.data !== "object") return json(400, { error: "Faltan datos." });
 
     // Nunca pisar una copia más nueva (por ejemplo, desde otro dispositivo).
-    const current = await store.get("backup", { type: "json" });
+    const current = await s.get(key, { type: "json" });
     if (current && current.updatedAt > updatedAt) {
       return json(409, { error: "La nube tiene datos más recientes.", updatedAt: current.updatedAt });
     }
 
-    await store.setJSON("backup", { data: body.data, updatedAt });
+    await s.setJSON(key, { data: body.data, updatedAt });
     // Copia diaria adicional, para poder volver atrás si algo sale mal.
-    await store.setJSON(`daily/${new Date(updatedAt).toISOString().slice(0, 10)}`, { data: body.data, updatedAt });
+    await s.setJSON(`days/${user}/${new Date(updatedAt).toISOString().slice(0, 10)}`, { data: body.data, updatedAt });
     return json(200, { ok: true, updatedAt });
   }
 

@@ -16,7 +16,8 @@ Calculadora de calorías con IA: sacas una foto del plato, Claude estima calorí
 3. **Conecta Netlify**: en https://app.netlify.com → *Add new site → Import an existing project* → elige el repositorio. No cambies nada de la configuración de build y pulsa *Deploy*.
 4. **Configura las variables** en *Site configuration → Environment variables*:
    - `ANTHROPIC_API_KEY` — tu key (obligatoria).
-   - `APP_PIN` — un código que inventes (recomendado). Evita que alguien con el enlace gaste tu crédito y activa la copia automática de tus datos en la nube. Después lo escribes una vez en Perfil → Tus datos.
+   - `APP_PIN` — el **código de invitación** (obligatorio). Solo quien lo tenga puede crear una cuenta, así nadie gasta tu crédito sin permiso.
+   - `AI_DAILY_LIMIT` — opcional. Máximo de análisis con IA por usuario y por día (40 si no lo defines).
 5. **Vuelve a desplegar** (*Deploys → Trigger deploy*) para que tome las variables.
 6. Abre el enlace en el móvil y usa *Compartir → Agregar a inicio* para tenerla como app.
 
@@ -31,7 +32,8 @@ En local no hay función de IA: la app responde con un plato de ejemplo ("modo d
 ## Notas
 
 - Modelo: `claude-opus-5-5` con esfuerzo bajo. Se cambia en `analyze.mjs`.
-- Los datos (perfil, comidas y actividad) se guardan en el navegador del móvil y, si configuraste `APP_PIN`, también en Netlify Blobs de tu propio sitio (`netlify/functions/sync.mjs`), con una copia extra por día. Actualizar la app no borra nada.
+- Cada persona crea su cuenta (usuario y contraseña) con el código de invitación. Sus datos se guardan en su móvil y en Netlify Blobs de tu sitio, separados por usuario, con una copia extra por día. Actualizar la app no borra nada.
+- Para invitar a alguien: pásale el enlace del sitio y el código de invitación.
 - En Perfil → Tus datos puedes además descargar una copia en un archivo y restaurarla.
 - El clima se obtiene de Open-Meteo (gratis, sin API key) con la ubicación del móvil, solo si das permiso. Si no, puedes escribir la temperatura a mano.
 - Las calorías de ejercicio son netas (descontando lo que gastarías en reposo) y por defecto se suma la mitad al objetivo del día; se cambia en Perfil.

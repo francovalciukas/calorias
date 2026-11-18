@@ -25,6 +25,7 @@
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:Outfit,system-ui,-apple-system,sans-serif;
   font-size:16px;line-height:1.35;overflow-x:hidden;-webkit-font-smoothing:antialiased}
@@ -259,6 +260,19 @@ select.inp{appearance:none;-webkit-appearance:none}
 .cloud.sync .dot{background:var(--teal);animation:blink 1s infinite}
 .cloud.err .dot{background:var(--pink)}
 @keyframes blink{50%{opacity:.25}}
+.auth{padding-top:7vh;text-align:center}
+.auth .logo{width:88px;height:88px;margin:0 auto 14px;border-radius:26px;box-shadow:0 18px 50px rgba(34,227,196,.25);animation:float 4s ease-in-out infinite}
+.auth h1{font-size:42px;font-weight:800;letter-spacing:-.03em}
+.auth h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.auth .tag{color:var(--mute);margin:6px auto 22px;max-width:300px}
+.auth .card{text-align:left;margin-top:14px}
+@keyframes float{50%{transform:translateY(-9px)}}
+body.authmode nav{display:none}
+.acct{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.acct .av{width:44px;height:44px;border-radius:50%;background:var(--grad);color:#07120a;font-weight:800;font-size:19px;display:grid;place-items:center;text-transform:uppercase;flex:none}
+.acct small{display:block;color:var(--mute);font-size:12px}
+.acct b{display:block;font-size:17px;overflow:hidden;text-overflow:ellipsis}
+.acct button{color:var(--pink);font-weight:600;font-size:14px;padding:8px 0}
 .legal{font-size:12px;color:var(--mute);text-align:center;margin-top:16px;line-height:1.5}
 
 .toast{position:fixed;left:50%;top:calc(16px + var(--safe-t));transform:translate(-50%,-140%);z-index:50;background:#1b1e2b;border:1px solid var(--line);
@@ -279,6 +293,23 @@ select.inp{appearance:none;-webkit-appearance:none}
 </svg>
 
 <div class="app">
+  <!-- INGRESO -->
+  <section class="view" id="v-auth">
+    <div class="auth">
+      <img class="logo" src="icon.svg" alt="">
+      <h1>Kcal <span>IA</span></h1>
+      <p class="tag">Sácale una foto a tu plato y la IA cuenta las calorías por ti.</p>
+      <div class="seg" id="authSeg"><button data-m="login" class="on">Entrar</button><button data-m="signup">Crear cuenta</button></div>
+      <div class="card">
+        <label class="field"><span>Usuario</span><input class="inp" id="auUser" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ej: franco"></label>
+        <label class="field"><span>Contraseña</span><input class="inp" id="auPass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres"></label>
+        <label class="field" id="auInvWrap" hidden><span>Código de invitación</span><input class="inp" id="auInv" autocomplete="off" autocapitalize="none" autocorrect="off" placeholder="Te lo pasa quien te invitó"></label>
+        <button class="btn" id="auGo">Entrar</button>
+      </div>
+      <p class="legal">Cada persona tiene su propia cuenta: tu perfil, tus comidas y tu actividad no se mezclan con los de nadie.</p>
+    </div>
+  </section>
+
   <!-- HOY -->
   <section class="view on" id="v-today">
     <header>
@@ -377,16 +408,16 @@ select.inp{appearance:none;-webkit-appearance:none}
 
     <div class="sect"><h2>Tus datos</h2></div>
     <div class="card">
-      <div class="cloud" id="cloudSt"><span class="dot"></span><span id="cloudTxt">Copia en la nube desactivada</span></div>
-      <label class="field"><span>Código de acceso (APP_PIN de Netlify)</span><input class="inp" id="pPin" type="password" autocomplete="off" placeholder="Activa la copia automática en la nube"></label>
-      <p class="help" style="margin:-6px 0 14px">Con el código, cada cambio se guarda solo en tu sitio de Netlify. Si cambias de móvil o se borra el navegador, escribes el código y todo vuelve.</p>
+      <div class="acct"><div class="av" id="acctAv"></div><div style="flex:1;min-width:0"><small>Sesión iniciada como</small><b id="acctName"></b></div><button id="logout">Cerrar sesión</button></div>
+      <div class="cloud" id="cloudSt"><span class="dot"></span><span id="cloudTxt">Conectando con la nube…</span></div>
+      <p class="help" style="margin:-6px 0 14px">Cada cambio se guarda solo en tu cuenta. Si cambias de móvil, entra con tu usuario y todo vuelve.</p>
       <div class="btns" style="margin-top:0">
         <button class="btn ghost" id="bkDown">⬇️ Descargar copia en un archivo</button>
         <button class="btn ghost" id="bkUp">⬆️ Restaurar desde un archivo</button>
       </div>
       <input type="file" id="bkFile" accept="application/json,.json" hidden>
     </div>
-    <p class="legal">Cálculo con la fórmula Mifflin-St Jeor. Es una estimación orientativa y no reemplaza el consejo de un profesional de la salud. Tus datos se guardan solo en este dispositivo.</p>
+    <p class="legal">Cálculo con la fórmula Mifflin-St Jeor. Es una estimación orientativa y no reemplaza el consejo de un profesional de la salud. Tus datos se guardan en este móvil y en tu cuenta.</p>
   </section>
 </div>
 
@@ -512,11 +543,12 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const r0 = (n) => Math.round(Number(n) || 0);
 const fmt = (n) => r0(n).toLocaleString('es-AR');
-const KEY = 'kcal-ia.v1';
+const KEY = 'kcal-ia.v2';
+try { localStorage.removeItem('kcal-ia.v1'); } catch {} // datos de la versión sin cuentas
 const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
 
 /* ---------- Estado ---------- */
-let S = { profile: null, entries: [], acts: [], pin: '' };
+let S = { user: null, token: null, profile: null, entries: [], acts: [], updatedAt: 0 };
 try { S = Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
 function save(touch = true) {
   if (touch) { S.updatedAt = Date.now(); cloudSoon(); }
@@ -710,8 +742,6 @@ $$('[data-seg] button').forEach((b) => b.onclick = (e) => { e.preventDefault(); 
 $('#saveProfile').onclick = async () => {
   const p = readForm();
   if (!plan(p)) return toast('Completa edad, altura y peso');
-  // En un dispositivo nuevo, primero recupera lo que haya en la nube.
-  if (await setPin()) return;
   S.profile = p; save();
   toast('Perfil guardado'); go('today');
 };
@@ -729,13 +759,14 @@ function applyData(d, at) {
 let cloudT = null, cloudBusy = false;
 function cloudSoon() { clearTimeout(cloudT); cloudT = setTimeout(cloudPush, 1500); }
 async function cloudFetch(method, body) {
-  const res = await fetch('/api/sync', { method, headers: { 'content-type': 'application/json', 'x-app-pin': S.pin }, body: body && JSON.stringify(body) });
+  const res = await fetch('/api/sync', { method, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + S.token }, body: body && JSON.stringify(body) });
   if (isLocal && [404, 405, 501].includes(res.status)) return { local: true };
+  if (res.status === 401) { sessionExpired(); return { local: true }; }
   const data = await res.json().catch(() => ({}));
   return { ok: res.ok, status: res.status, data };
 }
 async function cloudPush() {
-  if (!S.pin || cloudBusy) return;
+  if (!S.token || cloudBusy) return;
   cloudBusy = true; cloudStatus('sync', 'Guardando en la nube…');
   try {
     const r = await cloudFetch('PUT', { data: payload(), updatedAt: S.updatedAt || Date.now() });
@@ -748,7 +779,7 @@ async function cloudPush() {
 }
 // Trae la copia de la nube si es más nueva (u otro dispositivo cargó datos). Devuelve true si restauró.
 async function cloudPull() {
-  if (!S.pin) { cloudStatus('', 'Copia en la nube desactivada: escribe tu código de acceso'); return false; }
+  if (!S.token) return false;
   cloudStatus('sync', 'Conectando con la nube…');
   try {
     const r = await cloudFetch('GET');
@@ -766,14 +797,70 @@ async function cloudPull() {
   } catch { cloudStatus('err', 'Sin conexión: tus datos siguen guardados en este móvil'); }
   return false;
 }
-async function setPin() {
-  const pin = $('#pPin').value.trim();
-  if (pin === S.pin) return false;
-  S.pin = pin; save(false);
-  return pin ? cloudPull() : (cloudStatus('', 'Copia en la nube desactivada'), false);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.token) cloudPull(); });
+
+/* ---------- Cuentas ---------- */
+let authMode = 'login';
+$('#authSeg').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  authMode = b.dataset.m;
+  [...$('#authSeg').children].forEach((x) => x.classList.toggle('on', x === b));
+  $('#auInvWrap').hidden = authMode !== 'signup';
+  $('#auGo').textContent = authMode === 'signup' ? 'Crear cuenta' : 'Entrar';
+  $('#auPass').autocomplete = authMode === 'signup' ? 'new-password' : 'current-password';
+};
+function showAuth() {
+  document.body.classList.add('authmode');
+  $$('.view').forEach((v) => v.classList.toggle('on', v.id === 'v-auth'));
+  scrollTo(0, 0);
 }
-$('#pPin').addEventListener('change', setPin);
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cloudPull(); });
+function clearForm() {
+  Object.assign(form, { sex: 'm', rate: '500', share: '0.5' });
+  ['pAge', 'pHeight', 'pWeight', 'pCustom'].forEach((id) => { $('#' + id).value = ''; });
+  $('#pAct').value = '1.2';
+}
+function resetState(user, token) {
+  clearTimeout(cloudT);
+  S = { user, token, profile: null, entries: [], acts: [], updatedAt: 0 };
+  save(false); clearForm();
+}
+function showAccount() { $('#acctName').textContent = S.user; $('#acctAv').textContent = (S.user || '?')[0]; }
+async function startSession(user, token) {
+  resetState(user, token);
+  $('#auPass').value = ''; $('#auInv').value = '';
+  document.body.classList.remove('authmode');
+  viewDay = lastToday = dayKey();
+  showAccount(); go('profile');
+  if (!(await cloudPull())) toast(authMode === 'signup' ? `¡Cuenta creada! Completa tu perfil, ${user}` : `Hola, ${user}`);
+}
+$('#auGo').onclick = async () => {
+  const username = $('#auUser').value.trim().toLowerCase(), password = $('#auPass').value, invite = $('#auInv').value.trim();
+  if (!username || !password) return toast('Completa usuario y contraseña');
+  if (authMode === 'signup' && !invite) return toast('Escribe el código de invitación');
+  const b = $('#auGo'); busy(b, authMode === 'signup' ? 'Creando cuenta…' : 'Entrando…');
+  try {
+    const res = await fetch('/api/account', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: authMode, username, password, invite }) });
+    let data;
+    if (isLocal && [404, 405, 501].includes(res.status)) data = { token: 'local', username };
+    else {
+      data = await res.json().catch(() => ({ error: 'Respuesta inválida del servidor.' }));
+      if (!res.ok) throw new Error(data.error || 'No se pudo entrar.');
+    }
+    await startSession(data.username, data.token);
+  } catch (err) { toast(errMsg(err)); }
+  finally { unbusy(b); }
+};
+$('#auPass').onkeydown = (e) => { if (e.key === 'Enter') $('#auGo').click(); };
+$('#logout').onclick = async () => {
+  if (!confirm('¿Cerrar sesión en este móvil? Tus datos quedan guardados en tu cuenta.')) return;
+  clearTimeout(cloudT); await cloudPush();
+  fetch('/api/account', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + S.token }, body: JSON.stringify({ action: 'logout' }) }).catch(() => {});
+  resetState(null, null); showAuth();
+};
+function sessionExpired() {
+  if (!S.token) return;
+  resetState(null, null); showAuth(); toast('Tu sesión expiró. Vuelve a entrar.');
+}
 
 $('#bkDown').onclick = () => {
   const blob = new Blob([JSON.stringify({ app: 'kcal-ia', version: 1, exportedAt: new Date().toISOString(), ...payload() })], { type: 'application/json' });
@@ -891,8 +978,9 @@ function prepare(file) {
 /* ---------- API ---------- */
 // Devuelve null en local (sin funciones de Netlify) para usar datos de ejemplo.
 async function api(path, body) {
-  const res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-app-pin': S.pin || '' }, body: JSON.stringify(body) });
+  const res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + S.token }, body: JSON.stringify(body) });
   if (isLocal && [404, 405, 501].includes(res.status)) { await new Promise((r) => setTimeout(r, 1500)); return null; }
+  if (res.status === 401) { sessionExpired(); throw new Error('Tu sesión expiró. Vuelve a entrar.'); }
   const data = await res.json().catch(() => ({ error: 'Respuesta inválida del servidor.' }));
   if (!res.ok) throw new Error(data.error || 'Error del servidor.');
   return data;
@@ -1140,11 +1228,13 @@ $('#acts').onclick = (e) => {
 };
 
 /* ---------- Inicio ---------- */
-loadProfile(); $('#pPin').value = S.pin || '';
-go(S.profile && S.profile.v2 ? 'today' : 'profile');
+if (S.token && S.user) {
+  showAccount(); loadProfile();
+  go(S.profile && S.profile.v2 ? 'today' : 'profile');
+  cloudPull();
+} else showAuth();
 // Pide al navegador que no borre los datos de la app por falta de espacio.
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
-cloudPull();
 </script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { guardAI } from "../lib/auth.mjs";
 
 export const config = { path: "/api/analyze" };
 
@@ -58,11 +59,9 @@ export default async (req) => {
     return json(500, { error: "Falta configurar ANTHROPIC_API_KEY en Netlify." });
   }
 
-  // Código de acceso opcional: evita que otras personas gasten tu API key.
-  const pin = process.env.APP_PIN;
-  if (pin && req.headers.get("x-app-pin") !== pin) {
-    return json(401, { error: "Código de acceso incorrecto. Revísalo en Perfil." });
-  }
+  // Solo usuarios con sesión, y con un límite diario de análisis.
+  const denied = await guardAI(req);
+  if (denied) return denied;
 
   let body;
   try {
