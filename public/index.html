@@ -454,6 +454,7 @@ select.inp{appearance:none;-webkit-appearance:none}
     <div class="total"><div><span>Total</span><br><b class="num" id="rvTotal">0</b> <span>kcal</span></div><span class="num" id="rvMacros"></span></div>
     <div class="btns">
       <button class="btn" id="rvSave">Agregar al día</button>
+      <button class="btn ghost" id="rvMove" hidden>📅 Mover a hoy</button>
       <button class="btn danger" id="rvDel" hidden>Eliminar comida</button>
     </div>
   </div>
@@ -498,6 +499,7 @@ select.inp{appearance:none;-webkit-appearance:none}
   <div class="total"><div><span>Quemadas</span><br><b class="num f" id="arTotal">0</b> <span>kcal</span></div><span id="arBonus"></span></div>
   <div class="btns">
     <button class="btn fire" id="arSave">Agregar al día</button>
+    <button class="btn ghost" id="arMove" hidden>📅 Mover a hoy</button>
     <button class="btn danger" id="arDel" hidden>Eliminar actividad</button>
   </div>
 </div>
@@ -530,6 +532,19 @@ const fromKey = (k) => { const [y, m, d] = k.split('-').map(Number); return new 
 const shift = (k, n) => { const d = fromKey(k); d.setDate(d.getDate() + n); return dayKey(d); };
 const nowHM = () => new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false });
 let viewDay = dayKey();
+// Cambio de día: a las 00:00 la pantalla Hoy pasa sola al día nuevo.
+let lastToday = viewDay;
+function checkDay() {
+  const t = dayKey();
+  if (t === lastToday) return;
+  if (viewDay === lastToday) viewDay = t;
+  lastToday = t;
+  const v = $$('.view').find((x) => x.classList.contains('on')).id.slice(2);
+  if (v === 'today') renderToday(); if (v === 'week') renderWeek();
+}
+setInterval(checkDay, 20000);
+['focus', 'pageshow'].forEach((ev) => addEventListener(ev, checkDay));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkDay(); });
 
 /* ---------- Nutrición ---------- */
 function plan(p) {
@@ -802,7 +817,7 @@ function sheet(id) {
 }
 const isOpen = (id) => $('#' + id).classList.contains('on');
 $('#scrim').onclick = () => sheet(null);
-$('#fab').onclick = () => sheet('sh-add');
+$('#fab').onclick = () => { checkDay(); sheet('sh-add'); };
 $('#oCam').onclick = () => $('#fCam').click();
 $('#oGal').onclick = () => $('#fGal').click();
 $('#oTxt').onclick = () => { sheet('sh-text'); setTimeout(() => $('#txtDesc').focus(), 350); };
@@ -922,6 +937,7 @@ function openReview(d) {
   $('#rvNote').hidden = !d.notes; $('#rvNote').textContent = d.notes || '';
   $('#rvSave').textContent = d.id ? 'Guardar cambios' : 'Agregar al día';
   $('#rvDel').hidden = !d.id;
+  $('#rvMove').hidden = !d.id || d.date === dayKey();
   renderItems();
 }
 function renderItems() {
@@ -968,11 +984,17 @@ $('#rvSave').onclick = () => {
   else S.entries.push({ id: Date.now().toString(36), date: viewDay, time: nowHM(), name, thumb: draft.thumb, items, ...t });
   save(); sheet(null); go('today'); setTimeout(() => burst(false), 250);
 };
+function moveToToday(list, id, label) {
+  const t = dayKey(), e = list.find((x) => x.id === id);
+  e.date = t; viewDay = t; save(); sheet(null); go('today'); toast(label + ' movida a hoy');
+}
+$('#rvMove').onclick = () => moveToToday(S.entries, draft.id, 'Comida');
+$('#arMove').onclick = () => moveToToday(S.acts, draftA.id, 'Actividad');
 $('#rvDel').onclick = () => { S.entries = S.entries.filter((e) => e.id !== draft.id); save(); sheet(null); renderToday(); toast('Comida eliminada'); };
 $('#meals').onclick = (e) => {
   const m = e.target.closest('.meal'); if (!m) return;
   const en = S.entries.find((x) => x.id === m.dataset.id);
-  openReview({ id: en.id, name: en.name, thumb: en.thumb, items: en.items.map((i) => ({ ...i })) });
+  openReview({ id: en.id, date: en.date, name: en.name, thumb: en.thumb, items: en.items.map((i) => ({ ...i })) });
 };
 
 /* ---------- Actividad física ---------- */
@@ -997,6 +1019,7 @@ function fillWx() {
   $('#aTempSt').textContent = `Ahora · humedad ${WX.hum}%`;
 }
 function openAct() {
+  checkDay();
   if (!plan(S.profile)) { sheet(null); toast('Primero completa tu perfil: necesito tu peso y edad'); return go('profile'); }
   sheet('sh-act');
   const today = viewDay === dayKey();
@@ -1065,6 +1088,7 @@ function openActReview(d) {
   $('#arTip').hidden = !d.tip; $('#arTip').textContent = d.tip ? '💡 ' + d.tip : '';
   $('#arSave').textContent = d.id ? 'Guardar cambios' : 'Agregar al día';
   $('#arDel').hidden = !d.id;
+  $('#arMove').hidden = !d.id || d.date === dayKey();
   renderAItems();
 }
 function renderAItems() {
@@ -1112,7 +1136,7 @@ $('#acts').onclick = (e) => {
   if (e.target.closest('#actEmpty')) return openAct();
   const m = e.target.closest('.meal'); if (!m) return;
   const a = S.acts.find((x) => x.id === m.dataset.id);
-  openActReview({ id: a.id, time: a.time, temp: a.temp, items: a.items.map((i) => ({ ...i })) });
+  openActReview({ id: a.id, date: a.date, time: a.time, temp: a.temp, items: a.items.map((i) => ({ ...i })) });
 };
 
 /* ---------- Inicio ---------- */
